@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stm32f746xx.h"
+#include <optional>
 
 namespace stmcmp {
 
@@ -32,6 +33,12 @@ enum class PinPull : uint8_t
     Down = 0b10,
 };
 
+struct Exti
+{
+    bool rising;
+    bool faling;
+};
+
 class GpioBuilder;
 class GpioPin
 {
@@ -39,6 +46,8 @@ class GpioPin
 
 public:
     void toggle();
+    void on();
+    void off();
 
 private:
     GpioPin(GPIO_TypeDef* port, uint8_t pin);
@@ -64,7 +73,9 @@ public:
     GpioBuilder& setSpeed(PinSpeed value);
     GpioBuilder& setPull(PinPull value);
     GpioBuilder& setAlternateFunction(uint8_t value);
+    GpioBuilder& setExti(bool rising, bool faling);
     GpioPin build();
+    static GpioPin none();
 
 private:
     uint32_t m_port;
@@ -73,7 +84,8 @@ private:
     PinSpeed m_speed = PinSpeed::Low;
     PinType m_type = PinType::PushPull;
     PinPull m_pull = PinPull::No;
-    uint8_t m_af = 0;
+    std::optional<uint8_t> m_af = std::nullopt;
+    std::optional<Exti> m_exti = std::nullopt;
 };
 
 }

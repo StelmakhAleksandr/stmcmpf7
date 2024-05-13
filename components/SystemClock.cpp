@@ -17,7 +17,7 @@ SystemClock* SystemClock::instance()
 
 void SystemClock::setup(const Clocks& clocks)
 {
-    SysTick->LOAD = clocks.sysclk() / 1000 - 1;
+    SysTick->LOAD = clocks.sysclk() / 1_kHz - 1;
     SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 }
 
@@ -26,6 +26,16 @@ void SystemClock::delay_ms(uint32_t us)
     int start = m_tickCount;
     while ((m_tickCount - start) < us)
         ;
+}
+
+uint32_t SystemClock::ticks()
+{
+    return m_tickCount;
+}
+
+uint32_t SystemClock::millisecondsElapsed()
+{
+    return SystemClock::instance()->ticks(); /// 1000;
 }
 
 };

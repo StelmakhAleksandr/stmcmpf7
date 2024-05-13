@@ -38,7 +38,7 @@ void Terminal::setup(const TerminalConfig& config, const Clocks& clocks)
 
     USART1->CR1 |= USART_CR1_UE;
     USART1->CR1 |= USART_CR1_TE;
-    std::cout.rdbuf(this);
+    // std::cout.rdbuf(this);
 }
 
 void Terminal::sendChar(char c)

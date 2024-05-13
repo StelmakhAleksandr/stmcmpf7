@@ -9,6 +9,8 @@ constexpr uint32_t AFRBits = 4;
 constexpr uint32_t RegisterHMinPinNumber = 8;
 };
 
+#include "../components/Terminal.h"
+
 namespace stmcmp {
 
 GpioPin::GpioPin(GPIO_TypeDef* port, uint8_t pin)
@@ -20,6 +22,16 @@ GpioPin::GpioPin(GPIO_TypeDef* port, uint8_t pin)
 void GpioPin::toggle()
 {
     toggleValue(&m_port->ODR, 1);
+}
+
+void GpioPin::on()
+{
+    m_port->BSRR = (1 << m_pin);
+}
+
+void GpioPin::off()
+{
+    m_port->BSRR = (0 << m_pin + GPIO_BSRR_BR0_Pos);
 }
 
 void GpioPin::setModer(PinModer value)
@@ -99,6 +111,20 @@ GpioBuilder& GpioBuilder::setAlternateFunction(uint8_t value)
     return *this;
 }
 
+GpioBuilder& GpioBuilder::setExti(bool rising, bool faling)
+{
+    m_exti = {
+        .rising = rising,
+        .faling = faling,
+    };
+    return *this;
+}
+
+GpioPin GpioBuilder::none()
+{
+    return GpioPin((GPIO_TypeDef*)0, 0);
+}
+
 GpioPin GpioBuilder::build()
 {
     auto index = ((uint32_t)m_port - AHB1PERIPH_BASE) / (GPIOB_BASE - AHB1PERIPH_BASE);
@@ -108,8 +134,34 @@ GpioPin GpioBuilder::build()
     pin.setSpeed(m_speed);
     pin.setPull(m_pull);
     pin.setType(m_type);
-    if (m_af > 0) {
-        pin.setAlternateFunction(m_af);
+    if (m_af.has_value()) {
+        pin.setAlternateFunction(m_af.value());
+    }
+    if (m_exti.has_value()) {
+        RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+        auto exticrIndex = [](uint8_t pin) -> uint8_t {
+            if (pin <= 3) {
+                return 0;
+            }
+            if (pin <= 7) {
+                return 1;
+            }
+            if (pin <= 11) {
+                return 2;
+            };
+            return 3;
+        };
+        uint8_t extiIndex = exticrIndex(m_pin);
+        auto offset = 4 * (m_pin % 4);
+        SYSCFG->EXTICR[extiIndex] |= (SYSCFG->EXTICR[extiIndex] & ~(0xF << offset)) | (index << offset);
+        if (m_exti.value().rising) {
+            EXTI->RTSR |= (1UL << m_pin);
+        }
+        if (m_exti.value().faling) {
+            EXTI->FTSR |= (1UL << m_pin);
+        }
+        EXTI->PR = (1UL << m_pin);
+        EXTI->IMR |= (1UL << m_pin);
     }
     return pin;
 }

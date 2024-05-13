@@ -1,5 +1,7 @@
 #include "SdRam.h"
 
+#include "config/Sdram.h"
+
 namespace stmcmp {
 
 SdRam* SdRam::instance()
@@ -16,6 +18,7 @@ void SdRam::setup(const SdramConfig& config)
 
 void* SdRam::allocate(size_t size)
 {
+    printf("allocate sz = %d \r\n", size);
     size_t blocksNeeded = (size + SDRAM_BLOCK_SIZE - 1) / SDRAM_BLOCK_SIZE;
     size_t sequence = 0;
     for (size_t i = 0; i < SDRAM_NUM_BLOCKS; ++i) {
@@ -47,7 +50,6 @@ void SdRam::deallocate(void* ptr, size_t size)
 
 bool SdRam::testMemory()
 {
-    std::cout << "START" << std::endl;
     int* sdram = reinterpret_cast<int*>(SDRAM_START);
     size_t elements = SDRAM_SIZE / sizeof(int);
     for (size_t i = 0; i < elements; i++) {
@@ -55,11 +57,9 @@ bool SdRam::testMemory()
     }
     for (size_t i = 0; i < elements; i++) {
         if (sdram[i] != static_cast<int>(i)) {
-            std::cout << "Error at index " << i << " got " << sdram[i] << std::endl;
             return false;
         }
     }
-    std::cout << "YEAH" << std::endl;
     return true;
 }
 

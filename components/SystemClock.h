@@ -22,6 +22,8 @@ public:
         auto durationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
         delay_ms(durationInMilliseconds);
     }
+    uint32_t ticks();
+    static uint32_t millisecondsElapsed();
 
 private:
     SystemClock() = default;
